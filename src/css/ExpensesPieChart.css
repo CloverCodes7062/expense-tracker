@@ -148,3 +148,17 @@
     font-weight: 600;
     width: 100px;
 }
+
+.save-data-btn {
+    position: absolute;
+    font-weight: 600;
+    bottom: 5px;
+    left: 5px;
+}
+
+.export-data-btn {
+    position: absolute;
+    font-weight: 600;
+    bottom: 5px;
+    right: 5px;
+}

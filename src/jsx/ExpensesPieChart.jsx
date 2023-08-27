@@ -15,6 +15,9 @@ ChartJS.register(
     Legend
 );
 
+let loggedIn = false;
+let user_id = 0;
+
 function InputContainer({ category, changeFunction, value }) {
     return (
         <div
@@ -37,7 +40,8 @@ function InputContainer({ category, changeFunction, value }) {
 }
 
 function PieChartContainer(props) {
-    return (<div className="pie-chart-container">
+    return (
+    <div className="pie-chart-container">
         <div className="title-login-signup-container">
             <h2 className="pie-chart-title">Expenses Pie Chart</h2>
             <button className="login-signup-btn btn btn-primary" onClick={props.handleLoginRenderedChange}>Login/Signup</button>
@@ -52,6 +56,12 @@ function PieChartContainer(props) {
             <InputContainer {...props.entertainmentProps} />
             <InputContainer {...props.resturantProps} />
         </div>
+        {loggedIn ?
+        <button className='save-data-btn btn btn-primary' onClick={props.handleSave}>Save Data</button>
+        : null}
+        {loggedIn ?
+        <button className='export-data-btn btn btn-primary'>Export Data</button>
+        : null}
     </div>);
 }
 
@@ -137,21 +147,8 @@ function ExpensesPieChart() {
         setLoginRenderedValue(!loginRenderedValue);
     }
 
-    const pieChartContainerProps = {
-        data,
-        options,
-        vehicleProps,
-        rentProps,
-        groceryProps,
-        entertainmentProps,
-        resturantProps,
-        handleLoginRenderedChange
-    }
-
     const [emailValue, setEmailValue] = useState("");
     const [passValue, setPassValue] = useState("");
-    
-    let loggedIn = false;
 
     const handleLogin = async () => {
 
@@ -171,6 +168,7 @@ function ExpensesPieChart() {
         }
 
         if (loggedIn) {
+            user_id = data.id;
             setLoginRenderedValue(false);
             (async () => {
                 const data_response = await fetch('http://localhost:3001/getData', {
@@ -178,7 +176,7 @@ function ExpensesPieChart() {
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ id: data.id }),
+                    body: JSON.stringify({ id: user_id }),
                 });
         
                 const data_values = await data_response.json();
@@ -192,27 +190,60 @@ function ExpensesPieChart() {
         }
     };
 
+    const handleSave = async () => {
+
+        const response = await fetch('http://localhost:3001/saveData', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                vehicle: vehicleValue, 
+                rent: rentValue, 
+                grocery: groceryValue, 
+                entertainment: entertainmentValue, 
+                resturant: resturantValue,
+                id: user_id,
+            }),
+        });
+
+        const data = await response.json();
+        console.log(data.message);
+    }
+
+    const pieChartContainerProps = {
+        data,
+        options,
+        vehicleProps,
+        rentProps,
+        groceryProps,
+        entertainmentProps,
+        resturantProps,
+        handleLoginRenderedChange,
+        handleSave
+    }
+
     {/* JSX COMPONENTS DEFINED AT TOP OF FILE */}
     return (
         <>
             <PieChartContainer {...pieChartContainerProps}/>
             {loginRenderedValue ?
-                <div className="login-signup-container">
-                    <h2>Login/Signup</h2>
-                    <div className="inputs-container">
-                        <div className="input-container">
-                            <input type="email" id="email-input" value={emailValue} onChange={handleChange(setEmailValue)} placeholder='Enter Email: '></input>
-                        </div>
-                        <div className="input-container">
-                            <input type="password" id="password-input" value={passValue} onChange={handleChange(setPassValue)} placeholder="Enter Password: "></input>
-                        </div>
+            <div className="login-signup-container">
+                <h2>Login/Signup</h2>
+                <div className="inputs-container">
+                    <div className="input-container">
+                        <input type="email" id="email-input" value={emailValue} onChange={handleChange(setEmailValue)} placeholder='Enter Email: '></input>
                     </div>
-                    <div className="login-signup-button-container">
-                        <button className="login-confirm-btn btn btn-primary" onClick={handleLogin}>Login</button>
-                        <button className="signup-confirm-btn btn btn-primary">Signup</button>
+                    <div className="input-container">
+                        <input type="password" id="password-input" value={passValue} onChange={handleChange(setPassValue)} placeholder="Enter Password: "></input>
                     </div>
                 </div>
-                : null}
+                <div className="login-signup-button-container">
+                    <button className="login-confirm-btn btn btn-primary" onClick={handleLogin}>Login</button>
+                    <button className="signup-confirm-btn btn btn-primary">Signup</button>
+                </div>
+            </div>
+            : null}
         </>
     );
 }

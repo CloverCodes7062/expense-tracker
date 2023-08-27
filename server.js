@@ -73,6 +73,23 @@ app.post('/getData', (req, res) => {
     );
 });
 
+app.post('/saveData', (req, res) => {
+    const { vehicle, rent, grocery, entertainment, resturant, id } = req.body;
+
+    connection.query(
+        'UPDATE user_data SET vehicle = ?, rent = ?, grocery = ?, entertainment = ?, resturant = ? WHERE id = ?',
+        [vehicle, rent, grocery, entertainment, resturant, id],
+        (err) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json({ message: 'Error Updating Data' });
+            } else {
+                res.json({ message: 'Data Updated Successfully' });
+            }
+        }
+    );
+});
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
