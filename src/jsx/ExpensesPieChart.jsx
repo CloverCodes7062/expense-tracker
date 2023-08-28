@@ -209,6 +209,25 @@ function ExpensesPieChart() {
 
         const data = await response.json();
         console.log(data.message);
+
+    }
+
+    const handleSignup = async () => {
+
+        const response = await fetch('http://localhost:3001/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                email: emailValue, 
+                password: passValue,
+            }),
+        });
+
+        const data = await response.json();
+        console.log(data.message);
+
     }
 
     const pieChartContainerProps = {
@@ -240,7 +259,7 @@ function ExpensesPieChart() {
                 </div>
                 <div className="login-signup-button-container">
                     <button className="login-confirm-btn btn btn-primary" onClick={handleLogin}>Login</button>
-                    <button className="signup-confirm-btn btn btn-primary">Signup</button>
+                    <button className="signup-confirm-btn btn btn-primary" onClick={handleSignup}>Signup</button>
                 </div>
             </div>
             : null}
