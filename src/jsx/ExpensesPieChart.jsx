@@ -3,7 +3,8 @@ import {
     Chart as ChartJS,
     ArcElement,
     Tooltip,
-    Legend
+    Legend,
+    plugins
 } from 'chart.js';
 import { useState } from 'react';
 import { useEffect } from 'react';
@@ -15,7 +16,6 @@ ChartJS.register(
     Legend
 );
 
-let loggedIn = false;
 let user_id = 0;
 
 function InputContainer({ category, changeFunction, value }) {
@@ -44,10 +44,13 @@ function PieChartContainer(props) {
     <div className="pie-chart-container">
         <div className="title-login-signup-container">
             <h2 className="pie-chart-title">Expenses Pie Chart</h2>
+            {!props.loggedIn ?
             <button className="login-signup-btn btn btn-primary" onClick={props.handleLoginRenderedChange}>Login/Signup</button>
+            : <button className="login-signup-btn btn btn-primary" onClick={props.handleSignout}>Signout</button>
+            }
         </div>
         <div className="pie-chart-graph-container">
-            <Doughnut data={props.data} options={props.options} />
+            <Doughnut data={props.data} options={props.options} plugins={props.plugins}/>
         </div>
         <div className="pie-chart-inputs-container">
             <InputContainer {...props.vehicleProps} />
@@ -56,10 +59,10 @@ function PieChartContainer(props) {
             <InputContainer {...props.entertainmentProps} />
             <InputContainer {...props.resturantProps} />
         </div>
-        {loggedIn ?
+        {props.loggedIn ?
         <button className='save-data-btn btn btn-primary' onClick={props.handleSave}>Save Data</button>
         : null}
-        {loggedIn ?
+        {props.loggedIn ?
         <button className='export-data-btn btn btn-primary'>Export Data</button>
         : null}
     </div>);
@@ -91,15 +94,39 @@ function ExpensesPieChart() {
         }],
     });
 
-    const options = {
-
-    };
-
     const [vehicleValue, setVehicleValue] = useState(500);
     const [rentValue, setRentValue] = useState(900);
     const [groceryValue, setGroceryValue] = useState(400);
     const [entertainmentValue, setEntertainmentValue] = useState(200);
     const [resturantValue, setResturantValue] = useState(150);
+    let [loggedIn, setLoggedIn] = useState(false);
+
+    const options = {
+        
+    };
+
+    const textCenter = {
+        id: 'textCenter',
+        beforeDatasetsDraw(chart, args, pluginOptions) {
+            const { ctx, data } = chart;
+
+            ctx.save();
+            ctx.font = 'bold 30px sans-serif';
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const total_expenses = parseInt(data.datasets[0].data[0]) + 
+                                   parseInt(data.datasets[0].data[1]) + 
+                                   parseInt(data.datasets[0].data[2]) + 
+                                   parseInt(data.datasets[0].data[3]) + 
+                                   parseInt(data.datasets[0].data[4])
+            ctx.fillText(total_expenses, chart.getDatasetMeta(0).data[0].x, chart.getDatasetMeta(0).data[0].y);
+        }
+    }
+
+    const plugins = [
+        textCenter
+    ]
 
     const handleChange = (changeFunction) => (event) => {
         changeFunction(event.target.value);
@@ -164,10 +191,7 @@ function ExpensesPieChart() {
         console.log(data.message);
 
         if (data.message == "Credentials are valid") {
-            loggedIn = true;
-        }
-
-        if (loggedIn) {
+            setLoggedIn(true);
             user_id = data.id;
             setLoginRenderedValue(false);
             (async () => {
@@ -210,7 +234,7 @@ function ExpensesPieChart() {
         const data = await response.json();
         console.log(data.message);
 
-    }
+    };
 
     const handleSignup = async () => {
 
@@ -228,17 +252,26 @@ function ExpensesPieChart() {
         const data = await response.json();
         console.log(data.message);
 
-    }
+    };
+
+    const handleSignout = () => {
+        setLoggedIn(false);
+        console.log("Successfully Logged Out")
+    };
 
     const pieChartContainerProps = {
         data,
         options,
+        plugins,
         vehicleProps,
         rentProps,
         groceryProps,
+        loggedIn,
         entertainmentProps,
+        loginRenderedValue,
         resturantProps,
         handleLoginRenderedChange,
+        handleSignout,
         handleSave
     }
 
