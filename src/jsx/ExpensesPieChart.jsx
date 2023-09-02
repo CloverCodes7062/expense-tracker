@@ -16,6 +16,7 @@ ChartJS.register(
     Legend
 );
 
+//INITALIZE USER ID AS 0
 let user_id = 0;
 
 function InputContainer({ category, changeFunction, value }) {
@@ -41,34 +42,55 @@ function InputContainer({ category, changeFunction, value }) {
 
 function PieChartContainer(props) {
     return (
-    <div className="pie-chart-container">
-        <div className="title-login-signup-container">
-            <h2 className="pie-chart-title">Expenses Pie Chart</h2>
-            {!props.loggedIn ?
-            <button className="login-signup-btn btn btn-primary" onClick={props.handleLoginRenderedChange}>Login/Signup</button>
-            : <button className="login-signup-btn btn btn-primary" onClick={props.handleSignout}>Signout</button>
-            }
+        <div className="pie-chart-container">
+            <div className="title-login-signup-container">
+                <h2 className="pie-chart-title">Expenses Pie Chart</h2>
+                {!props.loggedIn ?
+                    <button className="login-signup-btn btn btn-primary" onClick={props.handleLoginRenderedChange}>Login/Signup</button>
+                    : <button className="login-signup-btn btn btn-primary" onClick={props.handleSignout}>Signout</button>
+                }
+            </div>
+            <div className="pie-chart-graph-container">
+                <Doughnut data={props.data} options={props.options} plugins={props.plugins} />
+            </div>
+            <div className="pie-chart-inputs-container">
+                <InputContainer {...props.vehicleProps} />
+                <InputContainer {...props.rentProps} />
+                <InputContainer {...props.groceryProps} />
+                <InputContainer {...props.entertainmentProps} />
+                <InputContainer {...props.resturantProps} />
+            </div>
+            {props.loggedIn ?
+                <button className='save-data-btn btn btn-primary' onClick={props.handleSave}>Save Data</button>
+                : null}
+        </div>);
+}
+
+
+function LoginSignupContainer(props) {
+    return (<div className="login-signup-container">
+        <h2>Login/Signup</h2>
+        <div className="inputs-container">
+            <div className="input-container">
+                <input type="email" id="email-input" value={props.emailValue} onChange={props.handleChange(props.setEmailValue)} placeholder='Enter Email: '></input>
+            </div>
+            <div className="input-container">
+                <input type="password" id="password-input" value={props.passValue} onChange={props.handleChange(props.setPassValue)} placeholder="Enter Password: "></input>
+            </div>
         </div>
-        <div className="pie-chart-graph-container">
-            <Doughnut data={props.data} options={props.options} plugins={props.plugins}/>
+        <div className="login-signup-button-container">
+            <button className="login-confirm-btn btn btn-primary" onClick={props.handleLogin}>Login</button>
+            <button className="signup-confirm-btn btn btn-primary" onClick={props.handleSignup}>Signup</button>
         </div>
-        <div className="pie-chart-inputs-container">
-            <InputContainer {...props.vehicleProps} />
-            <InputContainer {...props.rentProps} />
-            <InputContainer {...props.groceryProps} />
-            <InputContainer {...props.entertainmentProps} />
-            <InputContainer {...props.resturantProps} />
-        </div>
-        {props.loggedIn ?
-        <button className='save-data-btn btn btn-primary' onClick={props.handleSave}>Save Data</button>
-        : null}
-        {props.loggedIn ?
-        <button className='export-data-btn btn btn-primary'>Export Data</button>
-        : null}
+        {props.signingupRendered ? <h3>Signing Up...</h3> : null}
+        {props.signupConfirmationRendered ? <h3>Signup Successful, Please Login</h3> : null}
+        {props.errorSigningUpRendered ? <h3>Error Signing Up, Try Again</h3> : null}
     </div>);
 }
 
+
 function ExpensesPieChart() {
+    //CREATE GRAPH INITIAL DATA
     const [data, setData] = useState({
         labels: [
             'Vehicle', 'Rent/Mortgage',
@@ -94,17 +116,23 @@ function ExpensesPieChart() {
         }],
     });
 
+    //CREATE MOST VALUES
     const [vehicleValue, setVehicleValue] = useState(500);
     const [rentValue, setRentValue] = useState(900);
     const [groceryValue, setGroceryValue] = useState(400);
     const [entertainmentValue, setEntertainmentValue] = useState(200);
     const [resturantValue, setResturantValue] = useState(150);
+    const [signupConfirmationRendered, setSignupConfirmationRendered] = useState(false);
+    const [signingupRendered, setSigningupRendered] = useState(false);
+    const [errorSigningUpRendered, setErrorSigningUpRendered] = useState(false);
+
     let [loggedIn, setLoggedIn] = useState(false);
 
     const options = {
-        
+
     };
 
+    //SET TEXT INSIDE OF GRAPH
     const textCenter = {
         id: 'textCenter',
         beforeDatasetsDraw(chart, args, pluginOptions) {
@@ -115,11 +143,11 @@ function ExpensesPieChart() {
             ctx.fillStyle = 'black';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const total_expenses = parseInt(data.datasets[0].data[0]) + 
-                                   parseInt(data.datasets[0].data[1]) + 
-                                   parseInt(data.datasets[0].data[2]) + 
-                                   parseInt(data.datasets[0].data[3]) + 
-                                   parseInt(data.datasets[0].data[4])
+            const total_expenses = parseInt(data.datasets[0].data[0]) +
+                parseInt(data.datasets[0].data[1]) +
+                parseInt(data.datasets[0].data[2]) +
+                parseInt(data.datasets[0].data[3]) +
+                parseInt(data.datasets[0].data[4])
             ctx.fillText(total_expenses, chart.getDatasetMeta(0).data[0].x, chart.getDatasetMeta(0).data[0].y);
         }
     }
@@ -132,6 +160,7 @@ function ExpensesPieChart() {
         changeFunction(event.target.value);
     };
 
+    //ALL PROPS FOR INPUT CONTAINER COMPONENTS
     const vehicleProps = {
         category: "Vehicle",
         value: vehicleValue,
@@ -158,6 +187,7 @@ function ExpensesPieChart() {
         changeFunction: handleChange(setResturantValue)
     };
 
+    //HANDLE UPDATING THE GRAPH WHEN DATA CHANGES
     useEffect(() => {
         const newData = { ...data };
         newData.datasets[0].data[0] = vehicleValue;
@@ -174,9 +204,11 @@ function ExpensesPieChart() {
         setLoginRenderedValue(!loginRenderedValue);
     }
 
+    //EMAIL AND PASS FOR LOGIN/SIGNUP
     const [emailValue, setEmailValue] = useState("");
     const [passValue, setPassValue] = useState("");
 
+    //LOGIN/SIGNUP/SAVED_DATA/DATA_RETREVIAL
     const handleLogin = async () => {
 
         const response = await fetch('http://localhost:3001/checkCredentials', {
@@ -184,7 +216,7 @@ function ExpensesPieChart() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ email: emailValue, password: passValue}),
+            body: JSON.stringify({ email: emailValue, password: passValue }),
         });
 
         const data = await response.json();
@@ -202,7 +234,7 @@ function ExpensesPieChart() {
                     },
                     body: JSON.stringify({ id: user_id }),
                 });
-        
+
                 const data_values = await data_response.json();
                 console.log(data_values.message);
                 setVehicleValue(data_values.vehicle)
@@ -221,11 +253,11 @@ function ExpensesPieChart() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
-                vehicle: vehicleValue, 
-                rent: rentValue, 
-                grocery: groceryValue, 
-                entertainment: entertainmentValue, 
+            body: JSON.stringify({
+                vehicle: vehicleValue,
+                rent: rentValue,
+                grocery: groceryValue,
+                entertainment: entertainmentValue,
                 resturant: resturantValue,
                 id: user_id,
             }),
@@ -238,19 +270,34 @@ function ExpensesPieChart() {
 
     const handleSignup = async () => {
 
+        setSigningupRendered(true);
+
         const response = await fetch('http://localhost:3001/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
-                email: emailValue, 
+            body: JSON.stringify({
+                email: emailValue,
                 password: passValue,
             }),
         });
 
         const data = await response.json();
         console.log(data.message);
+
+        if (data.message == 'Sign Up Successful') {
+            setSigningupRendered(false);
+            setSignupConfirmationRendered(true);
+            setTimeout(() => {
+                setSignupConfirmationRendered(false)
+            }, 3000);
+        } else {
+            setErrorSigningUpRendered(true);
+            setTimeout(() => {
+                setErrorSigningUpRendered(false)
+            }, 3000);
+        }
 
     };
 
@@ -259,6 +306,7 @@ function ExpensesPieChart() {
         console.log("Successfully Logged Out")
     };
 
+    //JSX COMPONENT PROPS
     const pieChartContainerProps = {
         data,
         options,
@@ -274,27 +322,26 @@ function ExpensesPieChart() {
         handleSignout,
         handleSave
     }
+    
+    const loginSignupContainerProps = {
+        signupConfirmationRendered,
+        signingupRendered,
+        errorSigningUpRendered,
+        handleChange,
+        emailValue,
+        setEmailValue,
+        passValue,
+        setPassValue,
+        handleLogin,
+        handleSignup,
 
-    {/* JSX COMPONENTS DEFINED AT TOP OF FILE */}
+    }
+    {/* JSX COMPONENTS DEFINED AT TOP OF FILE */ }
     return (
         <>
-            <PieChartContainer {...pieChartContainerProps}/>
+            <PieChartContainer {...pieChartContainerProps} />
             {loginRenderedValue ?
-            <div className="login-signup-container">
-                <h2>Login/Signup</h2>
-                <div className="inputs-container">
-                    <div className="input-container">
-                        <input type="email" id="email-input" value={emailValue} onChange={handleChange(setEmailValue)} placeholder='Enter Email: '></input>
-                    </div>
-                    <div className="input-container">
-                        <input type="password" id="password-input" value={passValue} onChange={handleChange(setPassValue)} placeholder="Enter Password: "></input>
-                    </div>
-                </div>
-                <div className="login-signup-button-container">
-                    <button className="login-confirm-btn btn btn-primary" onClick={handleLogin}>Login</button>
-                    <button className="signup-confirm-btn btn btn-primary" onClick={handleSignup}>Signup</button>
-                </div>
-            </div>
+            <LoginSignupContainer {...loginSignupContainerProps}/>
             : null}
         </>
     );

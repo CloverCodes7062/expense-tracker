@@ -136,30 +136,46 @@ app.post('/signup', (req, res) => {
         }
 
         connection.query(
-            'SELECT COUNT(*) AS count FROM users',
+            'SELECT * FROM users WHERE email = ?',
+            [email],
             (err, results) => {
                 if (err) {
-                    console.error(err);
+                    console.log(err);
                     connection.release();
-                    res.status(500).json({ message: 'Error Generating New ID' });
+                    res.status(500).json({ message: 'Error Checking if Email is Registered' });
+                    return;
+                }
+
+                if (results.length > 0) {
+                    connection.release();
+                    res.status(500).json({ message: 'Email Already Registered, Please Login' });
                     return;
                 } else {
-                    const id = results[0].count + 1;
                     connection.query(
-                        'INSERT INTO users (id, email, pass) VALUES (?, ?, ?)',
-                        [id, email, password],
-                        (err) => {
+                        'SELECT COUNT(*) AS count FROM users',
+                        (err, results) => {
                             if (err) {
                                 console.error(err);
                                 connection.release();
-                                res.status(500).json({ message: 'Invalid Email or Passowrd' });
+                                res.status(500).json({ message: 'Error Generating New ID' });
                                 return;
                             } else {
-                                res.json({ message: 'Sign Up Successful', id: id });
-                            }
-                        }
-                    );
-
+                                const id = results[0].count + 1;
+                                connection.query(
+                                    'INSERT INTO users (id, email, pass) VALUES (?, ?, ?)',
+                                    [id, email, password],
+                                    (err) => {
+                                        if (err) {
+                                            console.error(err);
+                                            connection.release();
+                                            res.status(500).json({ message: 'Invalid Email or Passowrd' });
+                                            return;
+                                        } else {
+                                            res.json({ message: 'Sign Up Successful', id: id });
+                                        }
+                                    }
+                                ); 
+                                
                     connection.query(
                         'INSERT INTO user_data (id, vehicle, rent, grocery, entertainment, resturant) VALUES (?, ?, ?, ?, ?, ?)',
                         [id, 500, 900, 400, 200, 150],
@@ -179,7 +195,10 @@ app.post('/signup', (req, res) => {
                                 res.json({ message: 'Successfully Added User Data', id: id});
                             }
                         }
-                    );
+                    );                
+                }
+            }
+        );
                 }
             }
         );
